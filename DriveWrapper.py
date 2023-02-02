@@ -1,6 +1,7 @@
 import json
 import socket
 from pathlib import Path
+from typing import Dict
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -34,24 +35,26 @@ class DriveWrapper:
         self.credentials = service_account.Credentials.from_service_account_info(gcp_sa_credentials)
         return self.credentials
 
-    def list_files_in_directory(self, directory_id: str, recursive: bool = False, file_types: [str] = None):
+    def list_files_in_directory(self, directory_id: str, recursive: bool = False, file_types: [str] = None) -> [Dict]:
         return self.list_objects_in_directory(directory_id, return_directories=False,
                                               recursive=recursive, file_types=file_types)
 
-    def list_directories_in_directory(self, directory_id: str, recursive: bool = False, file_types: [str] = None):
+    def list_directories_in_directory(self, directory_id: str, recursive: bool = False,
+                                      file_types: [str] = None) -> [Dict]:
         return self.list_objects_in_directory(directory_id, return_files=False, recursive=recursive,
                                               file_types=file_types)
 
     def list_objects_in_directory(self, directory_id: str, return_files: bool = True, file_types: [str] = None,
-                                  return_directories: bool = True, recursive: bool = False):
+                                  return_directories: bool = True, recursive: bool = False) -> [Dict]:
         """
-        Lists objects in Google Drive folder by id
+        Lists objects in Google Drive folder given the id of the folder
+
         :param directory_id: the id of the Google Drive (see url after 'folders/')
-        :param return_files: if False this will exclude files
-        :param return_directories: if False this will exclude directories
+        :param return_files: if False this will exclude files, defaults to True
+        :param return_directories: if False this will exclude directories, defaults to True
         :param file_types: if not empty, this list will be used to filter the files by extension
-        :param recursive: if True this will recursively go through directories in the given directory
-        :return: returns a list of dictionaries, each with the id, name and mimeType of the object
+        :param recursive: if True this will recursively go through directories in the given directory, defaults to False
+        :return: Returns a list of dictionaries, each with the id, name and mimeType of the object
         """
         creds = self.authenticate()
 
