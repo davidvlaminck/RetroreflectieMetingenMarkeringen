@@ -43,7 +43,7 @@ class DriveWrapper:
         :param file_types: if not empty, this list will be used to filter the files by extension
         :param recursive_level: if not zero, this is the depth level of directories the function will search in. If -1,
         it will search recursively without a limit.
-        :return: Returns an iterator of dictionaries, each with the id, name and mimeType of the object
+        :return: Returns an iterator of dictionaries, each with the id, name, parent_name and mimeType of the object
         """
         yield from self.list_objects_in_directory(directory_id, return_directories=False,
                                                   recursive_level=recursive_level, file_types=file_types)
@@ -55,7 +55,7 @@ class DriveWrapper:
         :param directory_id: the id of the Google Drive (see url after 'folders/')
         :param recursive_level: if not zero, this is the depth level of directories the function will search in. If -1,
         it will search recursively without a limit.
-        :return: Returns an iterator of dictionaries, each with the id, name and mimeType of the object
+        :return: Returns an iterator of dictionaries, each with the id, name, parent_name and mimeType of the object
         """
         yield from self.list_objects_in_directory(directory_id, return_files=False, recursive_level=recursive_level)
 
@@ -70,7 +70,7 @@ class DriveWrapper:
         :param file_types: if not empty, this list will be used to filter the files by extension
         :param recursive_level: if not zero, this is the depth level of directories the function will search in. If -1,
         it will search recursively without a limit.
-        :return: Returns an iterator of dictionaries, each with the id, name and mimeType of the object
+        :return: Returns an iterator of dictionaries, each with the id, name, parent_name and mimeType of the object
         """
         creds = self.authenticate()
 
@@ -78,6 +78,8 @@ class DriveWrapper:
             service = build('drive', 'v3', credentials=creds)
             page_token = None
             while True:
+                dir_name = service.files().get(fileId=directory_id, fields='name',
+                                               supportsAllDrives=True).execute().get('name')
                 response = service.files().list(q=f"'{directory_id}' in parents",
                                                 fields='nextPageToken, '
                                                        'files(id, name, mimeType)',
@@ -85,6 +87,7 @@ class DriveWrapper:
                                                 supportsAllDrives=True,
                                                 pageToken=page_token).execute()
                 for drive_object in response.get('files', []):
+                    drive_object['parent_name'] = dir_name
                     mimetype = drive_object.get("mimeType")
                     if mimetype == 'application/vnd.google-apps.folder':
                         if return_directories:
@@ -92,7 +95,7 @@ class DriveWrapper:
                         if recursive_level != 0:
                             yield from (self.list_objects_in_directory(
                                 directory_id=drive_object.get('id'), return_files=return_files, file_types=file_types,
-                                return_directories=return_directories, recursive_level=recursive_level-1))
+                                return_directories=return_directories, recursive_level=recursive_level - 1))
                     else:
                         if return_files:
                             if file_types:
@@ -108,3 +111,43 @@ class DriveWrapper:
         except HttpError as error:
             print(F'An error occurred: {error}')
             yield None
+
+    def find_directory_by_name(self, directory_name, directory_id: str = None):
+        creds = self.authenticate()
+        try:
+            service = build('drive', 'v3', credentials=creds)
+            query = f"mimeType='application/vnd.google-apps.folder' and name='{directory_name}'"
+            if directory_id is not None:
+                query += f" and '{directory_id}' in parents"
+            response = service.files().list(q=query, includeItemsFromAllDrives=True, supportsAllDrives=True,
+                                            fields='nextPageToken, files(id, name)').execute()
+            return [d.get('id') for d in response.get('files', [])]
+        except HttpError as error:
+            print(F'An error occurred: {error}')
+            return None
+
+    def create_directory(self, directory_name, parent_id):
+        creds = self.authenticate()
+        try:
+            service = build('drive', 'v3', credentials=creds)
+            directory_metadata = {
+                'name': directory_name,
+                'mimeType': 'application/vnd.google-apps.folder',
+                'parents': [parent_id]
+            }
+            file = service.files().create(body=directory_metadata, fields='id', supportsAllDrives=True).execute()
+            return file.get('id')
+        except HttpError as error:
+            print(F'An error occurred: {error}')
+            return None
+
+    def copy_file_to_dir(self, file_id, dir_id):
+        creds = self.authenticate()
+        copied_file = {'parents': [dir_id]}
+        try:
+            service = build('drive', 'v3', credentials=creds)
+            return service.files().copy(fileId=file_id, body=copied_file, supportsAllDrives=True).execute()
+        except HttpError as error:
+            print(F'An error occurred: {error}')
+            return None
+
