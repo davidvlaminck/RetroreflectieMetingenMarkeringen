@@ -34,4 +34,4 @@ if __name__ == '__main__':
         connector.set_up_tables()
 
     if step <= 3:
-
+        pass
