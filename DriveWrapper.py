@@ -76,7 +76,7 @@ class DriveWrapper:
                             files.append(drive_object)
                         if recursive:
                             files.extend(self.list_objects_in_directory(
-                                directory_id=drive_object.get('id'), return_files=return_files,
+                                directory_id=drive_object.get('id'), return_files=return_files, file_types=file_types,
                                 return_directories=return_directories, recursive=recursive))
                     else:
                         if return_files:
@@ -94,4 +94,5 @@ class DriveWrapper:
             print(F'An error occurred: {error}')
             files = None
 
+        print(f'found files in {directory_id}')
         return files
