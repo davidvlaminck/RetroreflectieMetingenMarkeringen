@@ -35,26 +35,42 @@ class DriveWrapper:
         self.credentials = service_account.Credentials.from_service_account_info(gcp_sa_credentials)
         return self.credentials
 
-    def list_files_in_directory(self, directory_id: str, recursive: bool = False, file_types: [str] = None) -> [Dict]:
-        yield from self.list_objects_in_directory(directory_id, return_directories=False,
-                                              recursive=recursive, file_types=file_types)
+    def list_files_in_directory(self, directory_id: str, recursive_level: int = 0, file_types: [str] = None) -> [Dict]:
+        """
+        Returns files in Google Drive folder given the id of the folder
 
-    def list_directories_in_directory(self, directory_id: str, recursive: bool = False,
-                                      file_types: [str] = None) -> [Dict]:
-        yield from self.list_objects_in_directory(directory_id, return_files=False, recursive=recursive,
-                                              file_types=file_types)
+        :param directory_id: the id of the Google Drive (see url after 'folders/')
+        :param file_types: if not empty, this list will be used to filter the files by extension
+        :param recursive_level: if not zero, this is the depth level of directories the function will search in. If -1,
+        it will search recursively without a limit.
+        :return: Returns an iterator of dictionaries, each with the id, name and mimeType of the object
+        """
+        yield from self.list_objects_in_directory(directory_id, return_directories=False,
+                                                  recursive_level=recursive_level, file_types=file_types)
+
+    def list_directories_in_directory(self, directory_id: str, recursive_level: int = 0) -> [Dict]:
+        """
+        Returns directories in Google Drive folder given the id of the folder
+
+        :param directory_id: the id of the Google Drive (see url after 'folders/')
+        :param recursive_level: if not zero, this is the depth level of directories the function will search in. If -1,
+        it will search recursively without a limit.
+        :return: Returns an iterator of dictionaries, each with the id, name and mimeType of the object
+        """
+        yield from self.list_objects_in_directory(directory_id, return_files=False, recursive_level=recursive_level)
 
     def list_objects_in_directory(self, directory_id: str, return_files: bool = True, file_types: [str] = None,
-                                  return_directories: bool = True, recursive: bool = False) -> Iterator[Dict]:
+                                  return_directories: bool = True, recursive_level: int = 0) -> Iterator[Dict]:
         """
-        Lists objects in Google Drive folder given the id of the folder
+        Returns objects in Google Drive folder given the id of the folder
 
         :param directory_id: the id of the Google Drive (see url after 'folders/')
         :param return_files: if False this will exclude files, defaults to True
         :param return_directories: if False this will exclude directories, defaults to True
         :param file_types: if not empty, this list will be used to filter the files by extension
-        :param recursive: if True this will recursively go through directories in the given directory, defaults to False
-        :return: Returns a list of dictionaries, each with the id, name and mimeType of the object
+        :param recursive_level: if not zero, this is the depth level of directories the function will search in. If -1,
+        it will search recursively without a limit.
+        :return: Returns an iterator of dictionaries, each with the id, name and mimeType of the object
         """
         creds = self.authenticate()
 
@@ -73,10 +89,10 @@ class DriveWrapper:
                     if mimetype == 'application/vnd.google-apps.folder':
                         if return_directories:
                             yield drive_object
-                        if recursive:
+                        if recursive_level != 0:
                             yield from (self.list_objects_in_directory(
                                 directory_id=drive_object.get('id'), return_files=return_files, file_types=file_types,
-                                return_directories=return_directories, recursive=recursive))
+                                return_directories=return_directories, recursive_level=recursive_level-1))
                     else:
                         if return_files:
                             if file_types:
@@ -92,5 +108,3 @@ class DriveWrapper:
         except HttpError as error:
             print(F'An error occurred: {error}')
             yield None
-
-        print(f'found files in {directory_id}')
