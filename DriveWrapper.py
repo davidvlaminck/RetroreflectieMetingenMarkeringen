@@ -1,7 +1,7 @@
 import json
 import socket
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Iterator
 
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -36,16 +36,16 @@ class DriveWrapper:
         return self.credentials
 
     def list_files_in_directory(self, directory_id: str, recursive: bool = False, file_types: [str] = None) -> [Dict]:
-        return self.list_objects_in_directory(directory_id, return_directories=False,
+        yield from self.list_objects_in_directory(directory_id, return_directories=False,
                                               recursive=recursive, file_types=file_types)
 
     def list_directories_in_directory(self, directory_id: str, recursive: bool = False,
                                       file_types: [str] = None) -> [Dict]:
-        return self.list_objects_in_directory(directory_id, return_files=False, recursive=recursive,
+        yield from self.list_objects_in_directory(directory_id, return_files=False, recursive=recursive,
                                               file_types=file_types)
 
     def list_objects_in_directory(self, directory_id: str, return_files: bool = True, file_types: [str] = None,
-                                  return_directories: bool = True, recursive: bool = False) -> [Dict]:
+                                  return_directories: bool = True, recursive: bool = False) -> Iterator[Dict]:
         """
         Lists objects in Google Drive folder given the id of the folder
 
@@ -60,7 +60,6 @@ class DriveWrapper:
 
         try:
             service = build('drive', 'v3', credentials=creds)
-            files = []
             page_token = None
             while True:
                 response = service.files().list(q=f"'{directory_id}' in parents",
@@ -73,9 +72,9 @@ class DriveWrapper:
                     mimetype = drive_object.get("mimeType")
                     if mimetype == 'application/vnd.google-apps.folder':
                         if return_directories:
-                            files.append(drive_object)
+                            yield drive_object
                         if recursive:
-                            files.extend(self.list_objects_in_directory(
+                            yield from (self.list_objects_in_directory(
                                 directory_id=drive_object.get('id'), return_files=return_files, file_types=file_types,
                                 return_directories=return_directories, recursive=recursive))
                     else:
@@ -83,16 +82,15 @@ class DriveWrapper:
                             if file_types:
                                 extension = drive_object.get('name').split('.')[-1]
                                 if extension in file_types:
-                                    files.append(drive_object)
+                                    yield drive_object
                             else:
-                                files.append(drive_object)
+                                yield drive_object
                 page_token = response.get('nextPageToken', None)
                 if page_token is None:
                     break
 
         except HttpError as error:
             print(F'An error occurred: {error}')
-            files = None
+            yield None
 
         print(f'found files in {directory_id}')
-        return files
