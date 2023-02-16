@@ -1,12 +1,20 @@
+import io
 import json
+import os
+import shutil
 import socket
 from pathlib import Path
 from typing import Dict, Iterator
 
+import pandas
+import pyxlsb as pyxlsb
+import xlrd as xlrd
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from googleapiclient.errors import HttpError
+from apiclient import http
+from apiclient import errors
 
 
 class DriveWrapper:
@@ -88,6 +96,7 @@ class DriveWrapper:
                                                 pageToken=page_token).execute()
                 for drive_object in response.get('files', []):
                     drive_object['parent_name'] = dir_name
+                    drive_object['parent_id'] = directory_id
                     mimetype = drive_object.get("mimeType")
                     if mimetype == 'application/vnd.google-apps.folder':
                         if return_directories:
@@ -151,3 +160,78 @@ class DriveWrapper:
             print(F'An error occurred: {error}')
             return None
 
+
+    def download_file(self, file_id:str, file_path: Path):
+        creds = self.authenticate()
+        fh = io.FileIO(file_path, 'w+')
+
+        filename = os.path.basename(file_path)
+        try:
+            service = build('drive', 'v3', credentials=creds)
+            request = service.files().get_media(fileId=file_id)
+            media_request = http.MediaIoBaseDownload(fh, request)
+
+            while True:
+                try:
+                    download_progress, done = media_request.next_chunk()
+                except Exception as exc:
+                    print('An error occurred: %s' % exc)
+                    return
+                if download_progress:
+                    print('Download Progress: %d%%' % int(download_progress.progress() * 100))
+                if done:
+                    print(f'Download of {filename} Complete')
+                    return
+        except HttpError as error:
+            print(F'An error occurred: {error}')
+
+    def download_file2(self, file_id:str, file_path: Path):
+        creds = self.authenticate()
+        file_io = io.BytesIO()
+
+        filename = os.path.basename(file_path)
+        try:
+            service = build('drive', 'v3', credentials=creds)
+            request = service.files().get_media(fileId=file_id)
+            media_request = http.MediaIoBaseDownload(file_io, request)
+
+            while True:
+                try:
+                    download_progress, done = media_request.next_chunk()
+                except Exception as exc:
+                    print('An error occurred: %s' % exc)
+                    return
+                if download_progress:
+                    print('Download Progress: %d%%' % int(download_progress.progress() * 100))
+                if done:
+                    file_io.seek(0)
+                    with open('file_path', 'wb+') as f:
+                        shutil.copyfileobj(file_io, f, length=131072)
+                    print(f'Download of {filename} Complete')
+
+        except HttpError as error:
+            print(F'An error occurred: {error}')
+
+    def download_file3(self, file_id: str, file_path: Path):
+        creds = self.authenticate()
+        with open(file_path, mode='bw+') as file_io:
+            filename = os.path.basename(file_path)
+            try:
+                service = build('drive', 'v3', credentials=creds)
+                request = service.files().get_media(fileId=file_id)
+                media_request = http.MediaIoBaseDownload(file_io, request)
+
+                while True:
+                    try:
+                        download_progress, done = media_request.next_chunk()
+                    except Exception as exc:
+                        print('An error occurred: %s' % exc)
+                        return
+                    if download_progress:
+                        print('Download Progress: %d%%' % int(download_progress.progress() * 100))
+                    if done:
+                        print(f'Download of {filename} Complete')
+                        return
+
+            except HttpError as error:
+                print(F'An error occurred: {error}')
