@@ -6,15 +6,11 @@ import socket
 from pathlib import Path
 from typing import Dict, Iterator
 
-import pandas
-import pyxlsb as pyxlsb
-import xlrd as xlrd
+from apiclient import http
+from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from google.oauth2 import service_account
 from googleapiclient.errors import HttpError
-from apiclient import http
-from apiclient import errors
 
 
 class DriveWrapper:
