@@ -32,7 +32,7 @@ class PostGISConnector:
     def kill_connection(self, connection):
         self.pool.putconn(connection)
 
-    def create_additional_tables_by_year(self,  report_year: int,
+    def create_additional_tables_by_year(self, report_year: int,
                                          file_path=Path('sql_files/create_tables_year_specific.sql')):
         with self.main_connection.cursor() as cursor:
             with open(file_path) as setup_queries:

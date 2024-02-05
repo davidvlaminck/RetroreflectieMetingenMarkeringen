@@ -1,7 +1,4 @@
 import csv
-import datetime
-import logging
-import os
 from pathlib import Path
 
 from PostGISConnector import PostGISConnector
@@ -9,10 +6,10 @@ from PostGISConnector import PostGISConnector
 
 def create_and_fill_by_import(connector: PostGISConnector, beheersegmenten_year: int, file_path: Path):
     connection = connector.get_connection()
-    # create_table(connection=connection, beheersegmenten_year=beheersegmenten_year)
-    #
-    # import_file_from_temp_to_table(cursor=connection.cursor(), beheersegmenten_year=beheersegmenten_year,
-    #                                file_path=file_path)
+    create_table(connection=connection, beheersegmenten_year=beheersegmenten_year)
+
+    import_file_from_temp_to_table(cursor=connection.cursor(), beheersegmenten_year=beheersegmenten_year,
+                                   file_path=file_path)
 
     alter_table(connection=connection, beheersegmenten_year=beheersegmenten_year)
 

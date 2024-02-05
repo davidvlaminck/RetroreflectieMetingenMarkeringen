@@ -6,7 +6,9 @@ from pathlib import Path
 from DriveWrapper import DriveWrapper
 from PostGISConnector import PostGISConnector
 from SettingsManager import SettingsManager
+from new_scripts.copy_tables_to_drive import copy_tables_to_drive
 from new_scripts.copy_xls_files_to_new_teamdrive import copy_xls_files_to_new_teamdrive
+from new_scripts.create_analysis_tables import create_analysis_tables
 from new_scripts.download_and_process_files import download_and_process_files
 from new_scripts.load_beheersegmenten_to_table import create_and_fill_by_import
 from new_scripts.load_file_to_import_table import import_all_files_from_temp_to_table
@@ -28,8 +30,9 @@ if __name__ == '__main__':
     dir_id_root_meetjaar = '1bGRYh6dcvFoC5tQP92NspPpTB9743DaB'
 
     report_year = 2022
+    beheersegmenten_year = 2024
 
-    step = 8
+    step = 10
 
     connection = connector.main_connection
     cursor = connection.cursor()
@@ -62,5 +65,13 @@ if __name__ == '__main__':
         import_all_files_from_temp_to_table(connector=connector, report_year=report_year)
 
     if step <= 8:
-        create_and_fill_by_import(connector=connector, beheersegmenten_year=2024,
+        create_and_fill_by_import(connector=connector, beheersegmenten_year=beheersegmenten_year,
                                   file_path=Path('temp/beheersegmenten202402.csv'))
+
+    if step <= 9:
+        create_analysis_tables(connector=connector, report_year=report_year,
+                               beheersegmenten_year=beheersegmenten_year)
+
+    if step <= 10:
+        copy_tables_to_drive(wrapper=wrapper, connector=connector, report_year=report_year,
+                             dir_id_root_meetjaar=dir_id_root_meetjaar)
