@@ -11,6 +11,7 @@ from google.oauth2 import service_account
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaFileUpload
 
 
 class DriveWrapper:
@@ -156,7 +157,6 @@ class DriveWrapper:
             print(F'An error occurred: {error}')
             return None
 
-
     def download_file(self, file_id:str, file_path: Path):
         creds = self.authenticate()
         fh = io.FileIO(file_path, 'w+')
@@ -231,3 +231,22 @@ class DriveWrapper:
 
             except HttpError as error:
                 print(F'An error occurred: {error}')
+
+    def upload_file(self, file_path, dir_id):
+        # upload the file at file_path to the Google Drive directory dir_id
+        file_metadata = {
+            'name': os.path.basename(file_path),
+            'mimeType': 'application/vnd.ms-excel',
+            'parents': [dir_id]
+        }
+
+        creds = self.authenticate()
+        media = MediaFileUpload(file_path, mimetype='application/vnd.ms-excel', resumable=True)
+
+        try:
+            service = build('drive', 'v3', credentials=creds)
+            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            print('File ID: {}'.format(file.get('id')))
+
+        except HttpError as error:
+            print(F'An error occurred: {error}')
