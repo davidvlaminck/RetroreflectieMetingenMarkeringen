@@ -4,7 +4,7 @@ from pathlib import Path
 from PostGISConnector import PostGISConnector
 
 
-def create_and_fill_by_import(connector: PostGISConnector, beheersegmenten_year: int, file_path: Path):
+def create_and_fill_beheersegmenten_by_import(connector: PostGISConnector, beheersegmenten_year: int, file_path: Path):
     connection = connector.get_connection()
     create_table(connection=connection, beheersegmenten_year=beheersegmenten_year)
 

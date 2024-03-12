@@ -232,20 +232,28 @@ class DriveWrapper:
             except HttpError as error:
                 print(F'An error occurred: {error}')
 
-    def upload_file(self, file_path, dir_id):
+    def upload_file(self, file_path: Path, dir_id: str, shared_drive_id: str = None):
         # upload the file at file_path to the Google Drive directory dir_id
+
         file_metadata = {
             'name': os.path.basename(file_path),
-            'mimeType': 'application/vnd.ms-excel',
+            'mimeType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'parents': [dir_id]
         }
 
+        if shared_drive_id is not None:
+            file_metadata['driveId'] = shared_drive_id
+
         creds = self.authenticate()
-        media = MediaFileUpload(file_path, mimetype='application/vnd.ms-excel', resumable=True)
+        media = MediaFileUpload(file_path, resumable=True)
 
         try:
             service = build('drive', 'v3', credentials=creds)
-            file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            if shared_drive_id is None:
+                file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+            else:
+                file = service.files().create(body=file_metadata, media_body=media, fields='id',
+                                              supportsAllDrives=True).execute()
             print('File ID: {}'.format(file.get('id')))
 
         except HttpError as error:

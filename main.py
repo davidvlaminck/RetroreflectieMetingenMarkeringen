@@ -10,8 +10,8 @@ from new_scripts.copy_tables_to_drive import copy_tables_to_drive
 from new_scripts.copy_xls_files_to_new_teamdrive import copy_xls_files_to_new_teamdrive
 from new_scripts.create_analysis_tables import create_analysis_tables
 from new_scripts.download_and_process_files import download_and_process_files
-from new_scripts.load_beheersegmenten_to_table import create_and_fill_by_import
-from new_scripts.load_file_to_import_table import import_all_files_from_temp_to_table
+from new_scripts.load_beheersegmenten_to_table import create_and_fill_beheersegmenten_by_import
+from new_scripts.load_file_to_import_table import import_all_files_from_temp_to_table, process_all_imported_files_data
 from new_scripts.load_files_to_log_table import load_files_to_log_table
 
 if __name__ == '__main__':
@@ -24,15 +24,18 @@ if __name__ == '__main__':
         readonly_scope=False)
 
     # Meetjaar 20xx map op de Gedeelde Drive "Systematische Retroreflectiemetingen"
-    dir_id_meetjaar_orig = '1Me7ND5IpRTrVtXQjrfopjEsaVaxwtDqu'
+    dir_id_meetjaar_orig = '1b4p6dFJjaE9usIVXI5OlQq3S7tHZ-8a6'
 
     # Nieuwe Meetjaar 20xx map op de Gedeelde Drive specifiek voor dat jaar
-    dir_id_root_meetjaar = '1bGRYh6dcvFoC5tQP92NspPpTB9743DaB'
+    dir_id_root_meetjaar = '1QFQgprAfYPQQe5mI9DNfXo1J2YvX4gFW'
 
-    report_year = 2022
+    # id van de Gedeelde Drive
+    shared_drive_id = '0AFJgEEZtjvgyUk9PVA'
+
+    report_year = 2023
     beheersegmenten_year = 2024
 
-    step = 10
+    step = 11
 
     connection = connector.main_connection
     cursor = connection.cursor()
@@ -65,13 +68,16 @@ if __name__ == '__main__':
         import_all_files_from_temp_to_table(connector=connector, report_year=report_year)
 
     if step <= 8:
-        create_and_fill_by_import(connector=connector, beheersegmenten_year=beheersegmenten_year,
-                                  file_path=Path('temp/beheersegmenten202402.csv'))
+        process_all_imported_files_data(connector=connector, report_year=report_year)
 
     if step <= 9:
+        create_and_fill_beheersegmenten_by_import(connector=connector, beheersegmenten_year=beheersegmenten_year,
+                                                  file_path=Path('temp/beheersegmenten202402.csv'))
+
+    if step <= 10:
         create_analysis_tables(connector=connector, report_year=report_year,
                                beheersegmenten_year=beheersegmenten_year)
 
-    if step <= 10:
+    if step <= 11:
         copy_tables_to_drive(wrapper=wrapper, connector=connector, report_year=report_year,
-                             dir_id_root_meetjaar=dir_id_root_meetjaar)
+                             dir_id_root_meetjaar=dir_id_root_meetjaar, shared_drive_id=shared_drive_id)

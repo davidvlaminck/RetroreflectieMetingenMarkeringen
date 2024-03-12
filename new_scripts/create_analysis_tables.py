@@ -37,7 +37,7 @@ SELECT ttmr.toestel, ttmr.ident8, kmp, tijdstip_meting,replace(meting_serie_naam
 	,markering,locatieomschrijving, rl, rlmin, rlmax, rlstddev, rlprocpass,snelheid,marker
 	,latitude_start, longitude_start, latitude_eind, longitude_eind, segmenten.district, segmenten.provincie, segmenten.wegcategorie, oid, geoml72
 FROM ttw.ttw_t_mobiele_retroreflectometer{report_year} ttmr
-	JOIN ttw.ttw.gt_beheersegmenten_{beheersegmenten_year} segmenten ON ttmr.ident8 = segmenten.ident8
+	JOIN ttw.gt_beheersegmenten_{beheersegmenten_year} segmenten ON ttmr.ident8 = segmenten.ident8
 		AND kmp BETWEEN segmenten.beginpositie  AND segmenten.eindpositie
 	--where eigenbeheer=true --and marker not like '%Obstakel%'
 	--and rl<>0

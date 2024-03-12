@@ -221,7 +221,7 @@ def insertlog(Locbestand, scanmapurl, meting_naam, connection):
     # fieldinfo=[(oid,(LocPlanscan),(LocPlanscan[-4:]),str(time.asctime(time.localtime(os.path.getmtime(LocPlanscan)))),int(time.strftime('%Y%m%d',(time.localtime(os.path.getmtime(LocPlanscan))))),time.strftime('%Y-%m-%d %H:%M:%S'))]
     ##str(time.asctime(time.localtime(os.path.getmtime(LocPlanscan)))),int(time.strftime('%Y%m%d',(time.localtime(os.path.getmtime(LocPlanscan)))))
     # query = "INSERT INTO "+PostgisTabelName+ "(oid,LocPlanscan,Type,inleesdatum) VALUES (%s, %s, %s, %s)"
-    query = "INSERT INTO " +   + "(bestands_url,map_bestand,bestandsnaam,measure_series_name,ctr_header_bestandsnaam,inleesdatum) VALUES (%s,%s,%s,%s,%s,%s)"
+    query = "INSERT INTO " + + "(bestands_url,map_bestand,bestandsnaam,measure_series_name,ctr_header_bestandsnaam,inleesdatum) VALUES (%s,%s,%s,%s,%s,%s)"
     # print query
     cursor.executemany(query, fieldinfo)
     connection.commit()
