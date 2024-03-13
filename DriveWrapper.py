@@ -186,7 +186,7 @@ class DriveWrapper:
 
         file_metadata = {
             'name': os.path.basename(file_path),
-            'mimeType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            # 'mimeType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'parents': [dir_id]
         }
 
