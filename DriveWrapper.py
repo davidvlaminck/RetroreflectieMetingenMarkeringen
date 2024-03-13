@@ -181,57 +181,6 @@ class DriveWrapper:
         except HttpError as error:
             print(F'An error occurred: {error}')
 
-    def download_file2(self, file_id:str, file_path: Path):
-        creds = self.authenticate()
-        file_io = io.BytesIO()
-
-        filename = os.path.basename(file_path)
-        try:
-            service = build('drive', 'v3', credentials=creds)
-            request = service.files().get_media(fileId=file_id)
-            media_request = http.MediaIoBaseDownload(file_io, request)
-
-            while True:
-                try:
-                    download_progress, done = media_request.next_chunk()
-                except Exception as exc:
-                    print('An error occurred: %s' % exc)
-                    return
-                if download_progress:
-                    print('Download Progress: %d%%' % int(download_progress.progress() * 100))
-                if done:
-                    file_io.seek(0)
-                    with open('file_path', 'wb+') as f:
-                        shutil.copyfileobj(file_io, f, length=131072)
-                    print(f'Download of {filename} Complete')
-
-        except HttpError as error:
-            print(F'An error occurred: {error}')
-
-    def download_file3(self, file_id: str, file_path: Path):
-        creds = self.authenticate()
-        with open(file_path, mode='bw+') as file_io:
-            filename = os.path.basename(file_path)
-            try:
-                service = build('drive', 'v3', credentials=creds)
-                request = service.files().get_media(fileId=file_id)
-                media_request = http.MediaIoBaseDownload(file_io, request)
-
-                while True:
-                    try:
-                        download_progress, done = media_request.next_chunk()
-                    except Exception as exc:
-                        print('An error occurred: %s' % exc)
-                        return
-                    if download_progress:
-                        print('Download Progress: %d%%' % int(download_progress.progress() * 100))
-                    if done:
-                        print(f'Download of {filename} Complete')
-                        return
-
-            except HttpError as error:
-                print(F'An error occurred: {error}')
-
     def upload_file(self, file_path: Path, dir_id: str, shared_drive_id: str = None):
         # upload the file at file_path to the Google Drive directory dir_id
 
