@@ -1,8 +1,6 @@
-import io
 import json
-import os
-import shutil
 import socket
+from io import FileIO
 from pathlib import Path
 from typing import Dict, Iterator
 
@@ -118,7 +116,7 @@ class DriveWrapper:
             print(F'An error occurred: {error}')
             yield None
 
-    def find_directory_by_name(self, directory_name, directory_id: str = None):
+    def find_directory_by_name(self, directory_name: str, directory_id: str = None) -> [str]:
         creds = self.authenticate()
         try:
             service = build('drive', 'v3', credentials=creds)
@@ -132,7 +130,7 @@ class DriveWrapper:
             print(F'An error occurred: {error}')
             return None
 
-    def create_directory(self, directory_name, parent_id):
+    def create_directory(self, directory_name: str, parent_id: str) -> str | None:
         creds = self.authenticate()
         try:
             service = build('drive', 'v3', credentials=creds)
@@ -147,7 +145,7 @@ class DriveWrapper:
             print(F'An error occurred: {error}')
             return None
 
-    def copy_file_to_dir(self, file_id, dir_id):
+    def copy_file_to_dir(self, file_id: str, dir_id: str):
         creds = self.authenticate()
         copied_file = {'parents': [dir_id]}
         try:
@@ -157,11 +155,10 @@ class DriveWrapper:
             print(F'An error occurred: {error}')
             return None
 
-    def download_file(self, file_id:str, file_path: Path):
+    def download_file(self, file_id:str, file_path: Path) -> None:
         creds = self.authenticate()
-        fh = io.FileIO(file_path, 'w+')
+        fh = FileIO(file_path, 'w+')
 
-        filename = os.path.basename(file_path)
         try:
             service = build('drive', 'v3', credentials=creds)
             request = service.files().get_media(fileId=file_id)
@@ -176,16 +173,16 @@ class DriveWrapper:
                 if download_progress:
                     print('Download Progress: %d%%' % int(download_progress.progress() * 100))
                 if done:
-                    print(f'Download of {filename} Complete')
+                    print(f'Download of {file_path.name} Complete')
                     return
         except HttpError as error:
-            print(F'An error occurred: {error}')
+            print(F'An error occurred when downloading {file_path.name}: {error}')
 
-    def upload_file(self, file_path: Path, dir_id: str, shared_drive_id: str = None):
+    def upload_file(self, file_path: Path, dir_id: str, shared_drive_id: str = None) -> str:
         # upload the file at file_path to the Google Drive directory dir_id
 
         file_metadata = {
-            'name': os.path.basename(file_path),
+            'name': file_path.name,
             # 'mimeType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'parents': [dir_id]
         }
@@ -203,7 +200,7 @@ class DriveWrapper:
             else:
                 file = service.files().create(body=file_metadata, media_body=media, fields='id',
                                               supportsAllDrives=True).execute()
-            print('File ID: {}'.format(file.get('id')))
+            return file.get('id')
 
         except HttpError as error:
             print(F'An error occurred: {error}')
